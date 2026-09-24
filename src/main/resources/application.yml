@@ -1,0 +1,18 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: ms-bff
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://login.microsoftonline.com/339ca6ce-5975-43dc-ad6d-f31685ecd8c7/v2.0
+          audience: d3bb7766-4fbc-4ccf-a52d-bd7ef2e1c562
+
+catalogo:
+  url: http://localhost:8082
+
+pedidos:
+  url: http://localhost:8081

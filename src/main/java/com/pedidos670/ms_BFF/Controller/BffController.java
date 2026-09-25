@@ -2,8 +2,15 @@ package com.pedidos670.ms_BFF.Controller;
 
 import com.pedidos670.ms_BFF.clients.CatalogoClient;
 import com.pedidos670.ms_BFF.clients.PedidosClient;
-import com.pedidos670.ms_BFF.dtos.*;
+import com.pedidos670.ms_BFF.dtos.CrearPedidoDesdeBffRequest;
+import com.pedidos670.ms_BFF.dtos.ItemSolicitadoDTO;
+import com.pedidos670.ms_BFF.dtos.OrderItemRequestDTO;
+import com.pedidos670.ms_BFF.dtos.OrderRequestDTO;
+import com.pedidos670.ms_BFF.dtos.OrderResponseDTO;
+import com.pedidos670.ms_BFF.dtos.RespuestaProductoDTO;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,75 +27,196 @@ public class BffController {
     private final CatalogoClient catalogoClient;
     private final PedidosClient pedidosClient;
 
-    // ===== CATÁLOGO =====
+    // =====================================================
+    // CATÁLOGO
+    // =====================================================
 
     @GetMapping("/productos")
     public ResponseEntity<List<RespuestaProductoDTO>> listarProductos() {
-        return ResponseEntity.ok(catalogoClient.listarProductos());
+        return ResponseEntity.ok(
+                catalogoClient.listarProductos()
+        );
     }
 
     @GetMapping("/productos/{id}")
-    public ResponseEntity<RespuestaProductoDTO> obtenerProducto(@PathVariable Long id) {
-        return ResponseEntity.ok(catalogoClient.obtenerProducto(id));
+    public ResponseEntity<RespuestaProductoDTO> obtenerProducto(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                catalogoClient.obtenerProducto(id)
+        );
     }
 
-    // ===== PEDIDOS =====
+    // =====================================================
+    // PEDIDOS
+    // =====================================================
 
     @PostMapping("/pedidos")
     @PreAuthorize("hasAnyRole('CLIENTE', 'ADMIN')")
-    public ResponseEntity<?> crearPedido(@RequestBody CrearPedidoDesdeBffRequest request) {
+    public ResponseEntity<?> crearPedido(
+            @RequestBody CrearPedidoDesdeBffRequest request
+    ) {
+
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("El pedido debe contener al menos un producto");
+        }
+
+        if (request.getItems().size() != 1) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Solo se puede comprar un producto por pedido");
+        }
+
         double total = 0;
         List<OrderItemRequestDTO> items = new ArrayList<>();
 
         for (ItemSolicitadoDTO itemReq : request.getItems()) {
-            RespuestaProductoDTO producto = catalogoClient.obtenerProducto(itemReq.getProductoId());
 
-            if (producto.getStock() < itemReq.getCantidad()) {
-                return ResponseEntity.badRequest()
-                        .body("Stock insuficiente para: " + producto.getNombre());
+            if (itemReq.getCantidad() == null || itemReq.getCantidad() <= 0) {
+                return ResponseEntity
+                        .badRequest()
+                        .body("La cantidad debe ser mayor a cero");
             }
 
-            OrderItemRequestDTO item = new OrderItemRequestDTO();
-            item.setProductoId(producto.getId());
-            item.setCantidad(itemReq.getCantidad());
-            item.setPrecioUnitario(producto.getPrecio().doubleValue());
+            RespuestaProductoDTO producto =
+                    catalogoClient.obtenerProducto(
+                            itemReq.getProductoId()
+                    );
+
+            if (producto.getStock() < itemReq.getCantidad()) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(
+                                "Stock insuficiente para: "
+                                        + producto.getNombre()
+                        );
+            }
+
+            OrderItemRequestDTO item =
+                    new OrderItemRequestDTO();
+
+            item.setProductoId(
+                    producto.getId()
+            );
+
+            item.setCantidad(
+                    itemReq.getCantidad()
+            );
+
+            item.setPrecioUnitario(
+                    producto.getPrecio().doubleValue()
+            );
+
             items.add(item);
 
-            total += producto.getPrecio().doubleValue() * itemReq.getCantidad();
+            total += producto.getPrecio().doubleValue()
+                    * itemReq.getCantidad();
         }
 
-        OrderRequestDTO orderRequest = new OrderRequestDTO();
-        orderRequest.setClienteId(request.getClienteId());
-        orderRequest.setEstado("CREADO");
-        orderRequest.setTotal(total);
-        orderRequest.setItems(items);
+        OrderRequestDTO orderRequest =
+                new OrderRequestDTO();
 
-        OrderResponseDTO pedidoCreado = pedidosClient.crearPedido(orderRequest);
+        orderRequest.setClienteId(
+                request.getClienteId()
+        );
 
-        for (ItemSolicitadoDTO itemReq : request.getItems()) {
-            catalogoClient.descontarStock(itemReq.getProductoId(), itemReq.getCantidad());
-        }
+        orderRequest.setEstado(
+                "CREADO"
+        );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoCreado);
+        orderRequest.setTotal(
+                total
+        );
+
+        orderRequest.setItems(
+                items
+        );
+
+        OrderResponseDTO pedidoCreado =
+                pedidosClient.crearPedido(
+                        orderRequest
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(pedidoCreado);
     }
 
+    // =====================================================
+    // CONSULTA DE PEDIDOS
+    // =====================================================
+
+    // OPERADOR y ADMIN pueden ver todos
     @GetMapping("/pedidos")
     @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     public ResponseEntity<List<OrderResponseDTO>> listarPedidos() {
-        return ResponseEntity.ok(pedidosClient.obtenerTodos());
+
+        return ResponseEntity.ok(
+                pedidosClient.obtenerTodos()
+        );
     }
 
-    @GetMapping("/pedidos/{id}")
-    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
-    public ResponseEntity<OrderResponseDTO> obtenerPedido(@PathVariable Long id) {
-        return ResponseEntity.ok(pedidosClient.obtenerPorId(id));
+    // CLIENTE puede consultar sus pedidos por clienteId
+    @GetMapping("/pedidos/client/{clienteId}")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<List<OrderResponseDTO>> obtenerPedidosPorCliente(
+            @PathVariable String clienteId
+    ) {
+
+        return ResponseEntity.ok(
+                pedidosClient.obtenerPorCliente(clienteId)
+        );
     }
+
+    // CLIENTE, OPERADOR y ADMIN pueden consultar por ID
+    @GetMapping("/pedidos/{id}")
+    @PreAuthorize(
+            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')"
+    )
+    public ResponseEntity<OrderResponseDTO> obtenerPedido(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                pedidosClient.obtenerPorId(id)
+        );
+    }
+
+    // =====================================================
+    // CAMBIO DE ESTADO
+    // =====================================================
 
     @PatchMapping("/pedidos/{id}/status")
-    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
+    @PreAuthorize(
+            "hasAnyRole('OPERADOR', 'ADMIN')"
+    )
     public ResponseEntity<OrderResponseDTO> cambiarEstadoPedido(
             @PathVariable Long id,
-            @RequestParam String status) {
-        return ResponseEntity.ok(pedidosClient.cambiarEstado(id, status));
+            @RequestParam String status
+    ) {
+
+        return ResponseEntity.ok(
+                pedidosClient.cambiarEstado(
+                        id,
+                        status
+                )
+        );
+    }
+
+    // =====================================================
+    // CANCELACIÓN
+    // =====================================================
+
+    @PatchMapping("/pedidos/{id}/cancelar")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<OrderResponseDTO> cancelarPedido(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                pedidosClient.cancelarPedido(id)
+        );
     }
 }

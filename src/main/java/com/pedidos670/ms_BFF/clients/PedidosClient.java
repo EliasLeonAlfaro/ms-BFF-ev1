@@ -1,7 +1,5 @@
 package com.pedidos670.ms_BFF.clients;
 
-import org.springframework.web.bind.annotation.*;
-
 import com.pedidos670.ms_BFF.dtos.OrderRequestDTO;
 import com.pedidos670.ms_BFF.dtos.OrderResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +34,13 @@ public class PedidosClient {
                 .body(List.class);
     }
 
+    public List<OrderResponseDTO> obtenerPorCliente(String clienteId) {
+        return restClient.get()
+                .uri("/api/pedidos/client/{clienteId}", clienteId)
+                .retrieve()
+                .body(List.class);
+    }
+
     public OrderResponseDTO obtenerPorId(Long id) {
         return restClient.get()
                 .uri("/api/pedidos/{id}", id)
@@ -45,7 +50,18 @@ public class PedidosClient {
 
     public OrderResponseDTO cambiarEstado(Long id, String status) {
         return restClient.patch()
-                .uri("/api/pedidos/{id}/status?status={status}", id, status)
+                .uri(
+                        "/api/pedidos/{id}/status?status={status}",
+                        id,
+                        status
+                )
+                .retrieve()
+                .body(OrderResponseDTO.class);
+    }
+
+    public OrderResponseDTO cancelarPedido(Long id) {
+        return restClient.patch()
+                .uri("/api/pedidos/{id}/cancelar", id)
                 .retrieve()
                 .body(OrderResponseDTO.class);
     }

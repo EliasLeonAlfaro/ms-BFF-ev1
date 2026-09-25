@@ -79,6 +79,79 @@ public class BffController {
                     );
         }
     }
+    @PutMapping("/productos/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> actualizarProducto(
+            @PathVariable Long id,
+            @RequestBody GuardarProductoDTO request
+    ) {
+        try {
+
+            RespuestaProductoDTO actualizado =
+                    catalogoClient.actualizarProducto(
+                            id,
+                            request
+                    );
+
+            return ResponseEntity.ok(actualizado);
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (org.springframework.web.client.HttpServerErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "Error al actualizar producto: "
+                                    + e.getMessage()
+                    );
+        }
+    }
+    @DeleteMapping("/productos/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> eliminarProducto(
+            @PathVariable Long id
+    ) {
+        try {
+
+            catalogoClient.eliminarProducto(id);
+
+            return ResponseEntity
+                    .noContent()
+                    .build();
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (org.springframework.web.client.HttpServerErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "Error al eliminar producto: "
+                                    + e.getMessage()
+                    );
+        }
+    }
 
     // =====================================================
     // PEDIDOS

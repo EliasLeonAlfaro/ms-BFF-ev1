@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/catalogo/**"
+                                "/api/bff/productos/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

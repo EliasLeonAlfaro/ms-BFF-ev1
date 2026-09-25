@@ -23,13 +23,11 @@ public class BffController {
     // ===== CATÁLOGO =====
 
     @GetMapping("/productos")
-    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
     public ResponseEntity<List<RespuestaProductoDTO>> listarProductos() {
         return ResponseEntity.ok(catalogoClient.listarProductos());
     }
 
     @GetMapping("/productos/{id}")
-    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
     public ResponseEntity<RespuestaProductoDTO> obtenerProducto(@PathVariable Long id) {
         return ResponseEntity.ok(catalogoClient.obtenerProducto(id));
     }

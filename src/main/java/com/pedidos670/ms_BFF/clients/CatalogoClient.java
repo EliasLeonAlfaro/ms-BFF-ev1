@@ -2,7 +2,9 @@ package com.pedidos670.ms_BFF.clients;
 
 import com.pedidos670.ms_BFF.dtos.GuardarProductoDTO;
 import com.pedidos670.ms_BFF.dtos.RespuestaProductoDTO;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,7 +15,9 @@ public class CatalogoClient {
 
     private final RestClient restClient;
 
-    public CatalogoClient(@Value("${catalogo.url}") String catalogoUrl) {
+    public CatalogoClient(
+            @Value("${catalogo.url}") String catalogoUrl
+    ) {
         this.restClient = RestClient.builder()
                 .baseUrl(catalogoUrl)
                 .build();
@@ -23,7 +27,11 @@ public class CatalogoClient {
         return restClient.get()
                 .uri("/api/catalogo/productos")
                 .retrieve()
-                .body(List.class);
+                .body(
+                        new ParameterizedTypeReference<
+                                List<RespuestaProductoDTO>
+                                >() {}
+                );
     }
 
     public RespuestaProductoDTO obtenerProducto(Long id) {
@@ -43,7 +51,10 @@ public class CatalogoClient {
                 .body(RespuestaProductoDTO.class);
     }
 
-    public RespuestaProductoDTO actualizarProducto(Long id, GuardarProductoDTO dto) {
+    public RespuestaProductoDTO actualizarProducto(
+            Long id,
+            GuardarProductoDTO dto
+    ) {
         return restClient.put()
                 .uri("/api/catalogo/productos/{id}", id)
                 .body(dto)
@@ -51,9 +62,16 @@ public class CatalogoClient {
                 .body(RespuestaProductoDTO.class);
     }
 
-    public RespuestaProductoDTO descontarStock(Long id, Integer cantidad) {
-        return restClient.patch()
-                .uri("/api/catalogo/productos/{id}/stock?cantidad={cantidad}", id, cantidad)
+    public RespuestaProductoDTO descontarStock(
+            Long id,
+            Integer cantidad
+    ) {
+        return restClient.put()
+                .uri(
+                        "/api/catalogo/productos/{id}/stock?cantidad={cantidad}",
+                        id,
+                        cantidad
+                )
                 .retrieve()
                 .body(RespuestaProductoDTO.class);
     }

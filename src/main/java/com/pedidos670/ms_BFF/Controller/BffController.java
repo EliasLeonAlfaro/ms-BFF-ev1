@@ -42,17 +42,42 @@ public class BffController {
         );
     }
     @PostMapping("/productos")
-    @PreAuthorize("hasRole('ADMIN', 'OPERADOR')")
-    public ResponseEntity<RespuestaProductoDTO> crearProducto(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> crearProducto(
             @RequestBody GuardarProductoDTO request
     ) {
+        try {
 
-        RespuestaProductoDTO productoCreado =
-                catalogoClient.crearProducto(request);
+            RespuestaProductoDTO productoCreado =
+                    catalogoClient.crearProducto(request);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(productoCreado);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(productoCreado);
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (org.springframework.web.client.HttpServerErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "Error al crear producto: "
+                                    + e.getMessage()
+                    );
+        }
     }
 
     // =====================================================

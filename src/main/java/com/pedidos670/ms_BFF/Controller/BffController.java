@@ -189,20 +189,38 @@ public class BffController {
     // =====================================================
 
     @PatchMapping("/pedidos/{id}/status")
-    @PreAuthorize(
-            "hasAnyRole('OPERADOR', 'ADMIN')"
-    )
-    public ResponseEntity<OrderResponseDTO> cambiarEstadoPedido(
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
+    public ResponseEntity<?> cambiarEstadoPedido(
             @PathVariable Long id,
             @RequestParam String status
     ) {
+        try {
 
-        return ResponseEntity.ok(
-                pedidosClient.cambiarEstado(
-                        id,
-                        status
-                )
-        );
+            OrderResponseDTO pedidoActualizado =
+                    pedidosClient.cambiarEstado(
+                            id,
+                            status
+                    );
+
+            return ResponseEntity.ok(
+                    pedidoActualizado
+            );
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "Error al cambiar el estado del pedido: "
+                                    + e.getMessage()
+                    );
+        }
     }
 
     // =====================================================

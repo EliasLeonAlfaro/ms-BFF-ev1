@@ -42,7 +42,7 @@ public class BffController {
         );
     }
     @PostMapping("/productos")
-    @PreAuthorize("hasRole('OPERADOR','ADMIN')")
+    @PreAuthorize("hasAnyRole('OPERADOR','ADMIN')")
     public ResponseEntity<?> crearProducto(
             @RequestBody GuardarProductoDTO request
     ) {

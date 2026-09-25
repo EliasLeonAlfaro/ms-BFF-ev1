@@ -65,4 +65,11 @@ public class PedidosClient {
                 .retrieve()
                 .body(OrderResponseDTO.class);
     }
+    public OrderResponseDTO cancelarPedidoAdmin(Long id) {
+        return restClient.patch()
+                .uri("/api/pedidos/{id}/cancelar-admin", id)
+                .retrieve()
+                .body(OrderResponseDTO.class);
+    }
+
 }

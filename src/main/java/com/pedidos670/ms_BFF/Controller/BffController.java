@@ -42,7 +42,7 @@ public class BffController {
         );
     }
     @PostMapping("/productos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('OPERADOR','ADMIN')")
     public ResponseEntity<?> crearProducto(
             @RequestBody GuardarProductoDTO request
     ) {
@@ -158,7 +158,7 @@ public class BffController {
     // =====================================================
 
     @PostMapping("/pedidos")
-    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMIN', 'OPERADOR')")
     public ResponseEntity<?> crearPedido(
             @RequestBody CrearPedidoDesdeBffRequest request
     ) {

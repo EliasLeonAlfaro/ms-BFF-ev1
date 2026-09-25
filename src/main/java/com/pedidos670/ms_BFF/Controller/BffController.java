@@ -334,7 +334,7 @@ public class BffController {
     // =====================================================
 
     @PatchMapping("/pedidos/{id}/cancelar")
-    @PreAuthorize("hasRole('CLIENTE')")
+    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
     public ResponseEntity<?> cancelarPedido(
             @PathVariable Long id
     ) {

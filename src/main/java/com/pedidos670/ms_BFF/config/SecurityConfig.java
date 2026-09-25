@@ -2,6 +2,7 @@ package com.pedidos670.ms_BFF.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -12,12 +13,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // habilita @PreAuthorize en los controladores
 public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
@@ -29,10 +27,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                                .anyRequest().permitAll() // TEMPORAL: quitar esto y descomentar lo de abajo cuando probemos con JWT
-//                    .requestMatchers("/api/bff/publico/**").permitAll()
-//                    .requestMatchers("/api/bff/admin/**").hasRole("ADMIN")
-//                    .anyRequest().authenticated()
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
@@ -42,15 +37,12 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        // Valida automáticamente issuer, firma y vigencia
         return JwtDecoders.fromIssuerLocation(issuerUri);
     }
 
-    // Extrae los roles del token de Entra ID (claim "roles") y los convierte
-    // en authorities de Spring Security (ROLE_xxx)
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter.setAuthorityPrefix("");
         authoritiesConverter.setAuthoritiesClaimName("roles");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();

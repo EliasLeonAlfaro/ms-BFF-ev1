@@ -6,6 +6,7 @@ import com.pedidos670.ms_BFF.dtos.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -22,11 +23,13 @@ public class BffController {
     // ===== CATÁLOGO =====
 
     @GetMapping("/productos")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
     public ResponseEntity<List<RespuestaProductoDTO>> listarProductos() {
         return ResponseEntity.ok(catalogoClient.listarProductos());
     }
 
     @GetMapping("/productos/{id}")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
     public ResponseEntity<RespuestaProductoDTO> obtenerProducto(@PathVariable Long id) {
         return ResponseEntity.ok(catalogoClient.obtenerProducto(id));
     }
@@ -34,6 +37,7 @@ public class BffController {
     // ===== PEDIDOS =====
 
     @PostMapping("/pedidos")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'ADMIN')")
     public ResponseEntity<?> crearPedido(@RequestBody CrearPedidoDesdeBffRequest request) {
         double total = 0;
         List<OrderItemRequestDTO> items = new ArrayList<>();
@@ -71,16 +75,19 @@ public class BffController {
     }
 
     @GetMapping("/pedidos")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     public ResponseEntity<List<OrderResponseDTO>> listarPedidos() {
         return ResponseEntity.ok(pedidosClient.obtenerTodos());
     }
 
     @GetMapping("/pedidos/{id}")
+    @PreAuthorize("hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN')")
     public ResponseEntity<OrderResponseDTO> obtenerPedido(@PathVariable Long id) {
         return ResponseEntity.ok(pedidosClient.obtenerPorId(id));
     }
 
     @PatchMapping("/pedidos/{id}/status")
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     public ResponseEntity<OrderResponseDTO> cambiarEstadoPedido(
             @PathVariable Long id,
             @RequestParam String status) {

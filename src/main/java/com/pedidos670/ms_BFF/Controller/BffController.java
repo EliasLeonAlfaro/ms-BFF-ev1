@@ -211,12 +211,29 @@ public class BffController {
 
     @PatchMapping("/pedidos/{id}/cancelar")
     @PreAuthorize("hasRole('CLIENTE')")
-    public ResponseEntity<OrderResponseDTO> cancelarPedido(
+    public ResponseEntity<?> cancelarPedido(
             @PathVariable Long id
     ) {
+        try {
 
-        return ResponseEntity.ok(
-                pedidosClient.cancelarPedido(id)
-        );
+            OrderResponseDTO pedidoCancelado =
+                    pedidosClient.cancelarPedido(id);
+
+            return ResponseEntity.ok(
+                    pedidoCancelado
+            );
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al cancelar el pedido: " + e.getMessage());
+        }
     }
 }

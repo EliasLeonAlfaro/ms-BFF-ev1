@@ -10,54 +10,75 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout codigo
         uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Compilar BFF
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -Dmaven.test.skip=true
+
+      - name: Verificar JAR
+        run: |
+          ls -lh target/
+          test -f target/ms-BFF-0.0.1-SNAPSHOT.jar
 
       - name: Configurar SSH
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
 
-          echo "Clave SSH configurada"
-
-      - name: Probar conexion y crear carpeta
+      - name: Crear carpeta en EC2
         run: |
           ssh \
             -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=15 \
+            -o ConnectTimeout=20 \
             -i ~/.ssh/ec2_key \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
-            "echo 'Conexion SSH exitosa' && mkdir -p ~/cloudnative/ms-bff"
+            "mkdir -p ~/cloudnative/ms-bff"
 
-      - name: Copiar proyecto a EC2
+      - name: Copiar JAR y Dockerfile
         run: |
           scp \
             -o StrictHostKeyChecking=no \
             -i ~/.ssh/ec2_key \
-            -r \
+            target/ms-BFF-0.0.1-SNAPSHOT.jar \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/cloudnative/ms-bff/app.jar"
+
+          scp \
+            -o StrictHostKeyChecking=no \
+            -i ~/.ssh/ec2_key \
             Dockerfile \
-            .dockerignore \
-            pom.xml \
-            src \
-            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/cloudnative/ms-bff/"
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/cloudnative/ms-bff/Dockerfile"
 
       - name: Desplegar BFF
         run: |
           ssh \
             -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=20 \
             -i ~/.ssh/ec2_key \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << 'EOF'
 
           cd ~/cloudnative/ms-bff
 
+          echo "Construyendo imagen BFF..."
           docker build -t ms-bff .
 
+          echo "Eliminando contenedor anterior..."
           docker rm -f ms-bff || true
 
+          echo "Iniciando BFF..."
           docker run -d \
             --name ms-bff \
             --restart unless-stopped \
@@ -67,5 +88,7 @@ jobs:
             ms-bff
 
           docker image prune -f
+
+          echo "BFF desplegado"
 
           EOF

@@ -12,10 +12,11 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // habilita @PreAuthorize en los controladores
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
@@ -25,13 +26,22 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/catalogo/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .jwt(jwt ->
+                                jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        )
                 );
+
         return http.build();
     }
 
@@ -41,12 +51,17 @@ public class SecurityConfig {
     }
 
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        JwtGrantedAuthoritiesConverter authoritiesConverter =
+                new JwtGrantedAuthoritiesConverter();
+
         authoritiesConverter.setAuthorityPrefix("");
         authoritiesConverter.setAuthoritiesClaimName("roles");
 
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        JwtAuthenticationConverter converter =
+                new JwtAuthenticationConverter();
+
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
+
         return converter;
     }
 }

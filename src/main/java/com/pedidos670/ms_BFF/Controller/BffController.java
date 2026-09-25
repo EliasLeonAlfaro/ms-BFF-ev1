@@ -2,12 +2,7 @@ package com.pedidos670.ms_BFF.Controller;
 
 import com.pedidos670.ms_BFF.clients.CatalogoClient;
 import com.pedidos670.ms_BFF.clients.PedidosClient;
-import com.pedidos670.ms_BFF.dtos.CrearPedidoDesdeBffRequest;
-import com.pedidos670.ms_BFF.dtos.ItemSolicitadoDTO;
-import com.pedidos670.ms_BFF.dtos.OrderItemRequestDTO;
-import com.pedidos670.ms_BFF.dtos.OrderRequestDTO;
-import com.pedidos670.ms_BFF.dtos.OrderResponseDTO;
-import com.pedidos670.ms_BFF.dtos.RespuestaProductoDTO;
+import com.pedidos670.ms_BFF.dtos.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +40,19 @@ public class BffController {
         return ResponseEntity.ok(
                 catalogoClient.obtenerProducto(id)
         );
+    }
+    @PostMapping("/productos")
+    @PreAuthorize("hasRole('ADMIN', 'OPERADOR')")
+    public ResponseEntity<RespuestaProductoDTO> crearProducto(
+            @RequestBody GuardarProductoDTO request
+    ) {
+
+        RespuestaProductoDTO productoCreado =
+                catalogoClient.crearProducto(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(productoCreado);
     }
 
     // =====================================================

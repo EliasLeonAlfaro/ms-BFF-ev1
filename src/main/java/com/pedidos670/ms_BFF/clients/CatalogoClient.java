@@ -33,10 +33,12 @@ public class CatalogoClient {
                 .body(RespuestaProductoDTO.class);
     }
 
-    public RespuestaProductoDTO crearProducto(GuardarProductoDTO dto) {
+    public RespuestaProductoDTO crearProducto(
+            GuardarProductoDTO request
+    ) {
         return restClient.post()
                 .uri("/api/catalogo/productos")
-                .body(dto)
+                .body(request)
                 .retrieve()
                 .body(RespuestaProductoDTO.class);
     }

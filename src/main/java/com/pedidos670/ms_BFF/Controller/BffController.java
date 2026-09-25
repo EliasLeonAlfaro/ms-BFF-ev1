@@ -330,11 +330,12 @@ public class BffController {
     }
 
     // =====================================================
-    // CANCELACIÓN
-    // =====================================================
+// CANCELACIÓN
+// =====================================================
 
+    // CLIENTE: solo puede cancelar si está CREADO
     @PatchMapping("/pedidos/{id}/cancelar")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasRole('CLIENTE')")
     public ResponseEntity<?> cancelarPedido(
             @PathVariable Long id
     ) {
@@ -357,7 +358,43 @@ public class BffController {
 
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al cancelar el pedido: " + e.getMessage());
+                    .body(
+                            "Error al cancelar el pedido: "
+                                    + e.getMessage()
+                    );
+        }
+    }
+
+
+    // ADMIN: puede cancelar mientras no esté ENTREGADO ni CANCELADO
+    @PatchMapping("/pedidos/{id}/cancelar-admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> cancelarPedidoAdmin(
+            @PathVariable Long id
+    ) {
+        try {
+
+            OrderResponseDTO pedidoCancelado =
+                    pedidosClient.cancelarPedidoAdmin(id);
+
+            return ResponseEntity.ok(
+                    pedidoCancelado
+            );
+
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(e.getResponseBodyAsString());
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                            "Error al cancelar el pedido como ADMIN: "
+                                    + e.getMessage()
+                    );
         }
     }
 }

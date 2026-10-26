@@ -11,5 +11,6 @@ public class OrderResponseDTO {
     private String estado;
     private LocalDateTime fechaCreacion;
     private Double total;
+    private String codigoSeguimiento;
     private List<OrderItemRequestDTO> items;
 }

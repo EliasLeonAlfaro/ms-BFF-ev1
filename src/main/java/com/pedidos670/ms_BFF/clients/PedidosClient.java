@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import com.pedidos670.ms_BFF.dtos.OrderRequestDTO;
 import com.pedidos670.ms_BFF.dtos.OrderResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -43,10 +44,34 @@ public class PedidosClient {
                 .body(OrderResponseDTO.class);
     }
 
+    // Pedidos de un cliente (Mis Pedidos)
+    public List<OrderResponseDTO> obtenerPorCliente(String clienteId) {
+        return restClient.get()
+                .uri("/api/pedidos/client/{clienteId}", clienteId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<List<OrderResponseDTO>>() {});
+    }
+
     // Seguimiento público por código (lanza HttpClientErrorException.NotFound si no existe)
     public OrderResponseDTO obtenerPorCodigoSeguimiento(String codigo) {
         return restClient.get()
                 .uri("/api/pedidos/seguimiento/{codigo}", codigo)
+                .retrieve()
+                .body(OrderResponseDTO.class);
+    }
+
+    // Cancelación por el CLIENTE (solo si el pedido está en CREADO)
+    public OrderResponseDTO cancelarPedido(Long id) {
+        return restClient.patch()
+                .uri("/api/pedidos/{id}/cancelar", id)
+                .retrieve()
+                .body(OrderResponseDTO.class);
+    }
+
+    // Cancelación por ADMIN (mientras no esté ENTREGADO ni CANCELADO)
+    public OrderResponseDTO cancelarPedidoAdmin(Long id) {
+        return restClient.patch()
+                .uri("/api/pedidos/{id}/cancelar-admin", id)
                 .retrieve()
                 .body(OrderResponseDTO.class);
     }

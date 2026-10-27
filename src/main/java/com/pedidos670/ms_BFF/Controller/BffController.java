@@ -35,6 +35,34 @@ public class BffController {
         return ResponseEntity.ok(catalogoClient.obtenerProducto(id));
     }
 
+    @PostMapping("/productos")
+    public ResponseEntity<?> crearProducto(@RequestBody GuardarProductoDTO dto) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(catalogoClient.crearProducto(dto));
+        } catch (HttpClientErrorException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+        }
+    }
+
+    @PutMapping("/productos/{id}")
+    public ResponseEntity<?> actualizarProducto(@PathVariable Long id, @RequestBody GuardarProductoDTO dto) {
+        try {
+            return ResponseEntity.ok(catalogoClient.actualizarProducto(id, dto));
+        } catch (HttpClientErrorException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+        }
+    }
+
+    @DeleteMapping("/productos/{id}")
+    public ResponseEntity<?> eliminarProducto(@PathVariable Long id) {
+        try {
+            catalogoClient.eliminarProducto(id);
+            return ResponseEntity.noContent().build();
+        } catch (HttpClientErrorException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+        }
+    }
+
     // ===== PEDIDOS =====
 
     @PostMapping("/pedidos")
